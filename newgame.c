@@ -8,59 +8,103 @@ void convert_graph_to_sdl(Vertex * vertex, Vertex * vertex2) {
 }
 
 void scale(const Player * player, Vertex * vertex, Vertex * vertex2) {
-  float z_distance, z_distance2;
-  if(vertex->z > player->position.z) {
-    z_distance = vertex->z - player->position.z;
-  } else {
-    z_distance = player->position.z - vertex->z;
-  }
-  if(vertex2->z > player->position.z) {
-    z_distance2 = vertex2->z - player->position.z;
-  } else {
-    z_distance2 = player->position.z - vertex2->z;
-  }
-
-  vertex->x = vertex->x / (X_MID / z_distance);
-  vertex->y = vertex->y / (Y_MID / z_distance);
-  
-  vertex2->x = vertex2->x / (X_MID / z_distance2);
-  vertex2->y = vertex2->y / (Y_MID / z_distance2);
+  vertex->x = vertex->x / vertex->z;
+  vertex->y = vertex->y / vertex->z;
+  vertex2->x = vertex2->x / vertex2->z;
+  vertex2->y = vertex2->y / vertex2->z;
 }
 
-void draw_line(SDL_Renderer * renderer, const Player * player, const Vertex * vertex, const Vertex * vertex2, const Color * color) {
-  Vertex svertex = *vertex, svertex2 = *vertex2;
-  scale(player, &svertex, &svertex2);
-  convert_graph_to_sdl(&svertex, &svertex2);
-  SDL_SetRenderDrawColor(renderer, color->r, color->g, color->b, SDL_ALPHA_OPAQUE);
-  SDL_RenderDrawLine(renderer, svertex.x, svertex.y, svertex2.x, svertex2.y);
+void draw_line(FILE * logfile, SDL_Renderer * renderer, const Player * player, const Vertex * vertex, const Vertex * vertex2, const Color * color) {
+  if(!(vertex->z <= 0 && vertex2->z <= 0)) {
+    Vertex svertex = *vertex, svertex2 = *vertex2;
+    if(svertex.z <= 0)
+      svertex.z = 0.5;
+    if(svertex2.z <= 0)
+      svertex2.z = 0.5;
+    scale(player, &svertex, &svertex2);
+    convert_graph_to_sdl(&svertex, &svertex2);
+    SDL_SetRenderDrawColor(renderer, color->r, color->g, color->b, SDL_ALPHA_OPAQUE);
+    fprintf(logfile, "x: %g  y: %g x2: %g  y2: %g\n", svertex.x, svertex.y, svertex2.x, svertex2.y);
+    SDL_RenderDrawLine(renderer, svertex.x, svertex.y, svertex2.x, svertex2.y);
+  }
 }
 
-void draw_polygon(SDL_Renderer * renderer, const Player * player, const Polygon * polygon) {
+void draw_polygon(FILE * logfile, SDL_Renderer * renderer, const Player * player, const Polygon * polygon) {
   int i;
   for(i = 0; i < polygon->num_vertices - 1; ++i) {
-    draw_line(renderer, player, &polygon->vertices[i], &polygon->vertices[i+1], &polygon->color);
+    if(i == 2)
+      fprintf(logfile, "zzzzzzzzzzzzzzzzzzzzzz: %g", polygon->vertices[i].z);
+    draw_line(logfile, renderer, player, &polygon->vertices[i], &polygon->vertices[i+1], &polygon->color);
   }
 }
 
-void draw_object(SDL_Renderer * renderer, const Player * player, const Object * object) {
+void draw_object(FILE * logfile, SDL_Renderer * renderer, const Player * player, const Object * object) {
   int i;
   for(i = 0; i < object->num_polygons; ++i) {
-    draw_polygon(renderer, player, &object->polygons[i]);
+    draw_polygon(logfile, renderer, player, &object->polygons[i]);
   }
 }
 
- void draw_objects(SDL_Renderer * renderer, const Player * player, Object objects[50], int num_objects) {
+void draw_objects(FILE * logfile, SDL_Renderer * renderer, const Player * player, Object objects[50], int num_objects) {
   int i;
   for(i = 0; i < num_objects; ++i) {
-    draw_object(renderer, player, &objects[i]);
+    draw_object(logfile, renderer, player, &objects[i]);
   }
 }
 
 void draw(Game * g) {
   SDL_SetRenderDrawColor(g->renderer, g->bg_color.r, g->bg_color.g, g->bg_color.b, SDL_ALPHA_OPAQUE);
   SDL_RenderClear(g->renderer);
-  draw_objects(g->renderer, &g->player, g->objects, g->num_objects);
+  draw_objects(g->logfile, g->renderer, &g->player, g->objects, g->num_objects);
   SDL_RenderPresent(g->renderer);
+}
+
+void move_left(Game * g) {
+  int o, p, v;
+  for(o = 0; o < g->num_objects; ++o) {
+    Object * ob = &g->objects[o];
+    for(p = 0; p < ob->num_polygons; ++p) {
+      Polygon * po = &ob->polygons[p];
+      for(v = 0; v < po->num_vertices; ++v)
+        po->vertices[v].x += 20;
+    }
+  }
+}
+
+void move_right(Game * g) {
+  int o, p, v;
+  for(o = 0; o < g->num_objects; ++o) {
+    Object * ob = &g->objects[o];
+    for(p = 0; p < ob->num_polygons; ++p) {
+      Polygon * po = &ob->polygons[p];
+      for(v = 0; v < po->num_vertices; ++v)
+        po->vertices[v].x -= 20;
+    }
+  }
+}
+
+void move_forward(Game * g) {
+  int o, p, v;
+  for(o = 0; o < g->num_objects; ++o) {
+    Object * ob = &g->objects[o];
+    for(p = 0; p < ob->num_polygons; ++p) {
+      Polygon * po = &ob->polygons[p];
+      for(v = 0; v < po->num_vertices; ++v)
+        po->vertices[v].z -= 0.5;
+    }
+  }
+}
+
+void move_backward(Game * g) {
+  int o, p, v;
+  for(o = 0; o < g->num_objects; ++o) {
+    Object * ob = &g->objects[o];
+    for(p = 0; p < ob->num_polygons; ++p) {
+      Polygon * po = &ob->polygons[p];
+      for(v = 0; v < po->num_vertices; ++v)
+        po->vertices[v].z += 0.5;
+    }
+  }
 }
 
 void handle_events(Game * g) {
@@ -77,15 +121,19 @@ void handle_events(Game * g) {
         break;
       case SDLK_a:
       case SDLK_LEFT:
+        move_left(g);
         break;
       case SDLK_d:
       case SDLK_RIGHT:
+        move_right(g);
         break;
       case SDLK_w:
       case SDLK_UP:
+        move_forward(g);
         break;
       case SDLK_s:
       case SDLK_DOWN:
+        move_backward(g);
         break;
       case SDLK_q:
         break;
@@ -112,45 +160,44 @@ int main() {
   SDL_Window * window = SDL_CreateWindow("New Game", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, X_RESOLUTION, Y_RESOLUTION, SDL_WINDOW_OPENGL);
   SDL_Renderer * renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
-  Polygon ground_p = {
+  Polygon wall = {
     {
-      {-200, 0, -200},
-      {200, 0, -200},
-      {200, 0, -100},
-      {-200, 0, -100},
-      {-200, 0, -200}
-    },
-    5,
-    {225, 125, 50}
-  };
-
-  Polygon ground_p2 = {
-    {
-      {-800, -500, -900},
-      {800, -500, -900},
-      {800, -500, -100},
-      {-800, -500, -100},
-      {-800, -500, -900}
-    },
-    5,
-    {100, 125, 250}
-  };
-
-  Polygon ground_p3 = {
-    {
-      {-100, -100, -1500},
-      {-100, 100, -1500},
-      {100, 100, -1500},
-      {100, -100, -1500},
-      {-100, -100, -1500}
+      {1200, -900, 100},
+      {1200, 450, 100},
+      {1200, 450, 1},
+      {1200, -900, 1},
+      {1200, -900, 100}
     },
     5,
     {250, 5, 200}
   };
 
+  Polygon wall2 = {
+    {
+      {-1200, -900, 100},
+      {-1200, 450, 100},
+      {-1200, 450, 1},
+      {-1200, -900, 1},
+      {-1200, -900, 100}
+    },
+    5,
+    {225, 125, 50}
+  };
 
-  Object ground = {
-    {ground_p, ground_p2, ground_p3},
+  Polygon wall3 = {
+    {
+      {-1200, -900, 100},
+      {-1200, 450, 100},
+      {1200, 450, 100},
+      {1200, -900, 100},
+      {-1200, -900, 100}
+    },
+    5,
+    {100, 125, 250}
+  };
+
+  Object walls = {
+    {wall, wall2, wall3},
     3
   };
 
@@ -159,7 +206,7 @@ int main() {
       {0, 0, 0},
       180
     },
-    {ground},
+    {walls},
     1,
     renderer,
     {110, 220, 20},
@@ -173,6 +220,8 @@ int main() {
     SDL_DestroyRenderer(renderer);
   if(window)
     SDL_DestroyWindow(window);
+
+  fclose(g.logfile);
 
   SDL_Quit();
   return 0;
