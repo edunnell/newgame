@@ -38,7 +38,8 @@ typedef struct Game {
   Object objects[50];
   int num_objects;
   SDL_Renderer * renderer;
-  Color bg_color;
+  Color sky_color;
+  Color ground_color;
   SDL_bool playing;
   FILE * logfile;
 } Game;

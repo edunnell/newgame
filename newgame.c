@@ -14,17 +14,16 @@ void scale(const Player * player, Vertex * vertex, Vertex * vertex2) {
   vertex2->y = vertex2->y / vertex2->z;
 }
 
-void draw_line(FILE * logfile, SDL_Renderer * renderer, const Player * player, const Vertex * vertex, const Vertex * vertex2, const Color * color) {
+void draw_line(int i, FILE * logfile, SDL_Renderer * renderer, const Player * player, const Vertex * vertex, const Vertex * vertex2, const Color * color) {
   if(!(vertex->z <= 0 && vertex2->z <= 0)) {
     Vertex svertex = *vertex, svertex2 = *vertex2;
-    if(svertex.z <= 0)
-      svertex.z = 0.5;
-    if(svertex2.z <= 0)
-      svertex2.z = 0.5;
+    svertex.z = svertex.z < 0.1 ? 0.1 : svertex.z;
+    svertex2.z = svertex2.z < 0.1 ? 0.1 : svertex2.z;
+    svertex.y -= 750;
+    svertex2.y -= 750;
     scale(player, &svertex, &svertex2);
     convert_graph_to_sdl(&svertex, &svertex2);
     SDL_SetRenderDrawColor(renderer, color->r, color->g, color->b, SDL_ALPHA_OPAQUE);
-    fprintf(logfile, "x: %g  y: %g x2: %g  y2: %g\n", svertex.x, svertex.y, svertex2.x, svertex2.y);
     SDL_RenderDrawLine(renderer, svertex.x, svertex.y, svertex2.x, svertex2.y);
   }
 }
@@ -32,9 +31,7 @@ void draw_line(FILE * logfile, SDL_Renderer * renderer, const Player * player, c
 void draw_polygon(FILE * logfile, SDL_Renderer * renderer, const Player * player, const Polygon * polygon) {
   int i;
   for(i = 0; i < polygon->num_vertices - 1; ++i) {
-    if(i == 2)
-      fprintf(logfile, "zzzzzzzzzzzzzzzzzzzzzz: %g", polygon->vertices[i].z);
-    draw_line(logfile, renderer, player, &polygon->vertices[i], &polygon->vertices[i+1], &polygon->color);
+    draw_line(i, logfile, renderer, player, &polygon->vertices[i], &polygon->vertices[i+1], &polygon->color);
   }
 }
 
@@ -52,9 +49,18 @@ void draw_objects(FILE * logfile, SDL_Renderer * renderer, const Player * player
   }
 }
 
+void draw_background(SDL_Renderer * renderer, const Color * sky_color, const Color * ground_color) {
+  SDL_SetRenderDrawColor(renderer, sky_color->r, sky_color->g, sky_color->b, SDL_ALPHA_OPAQUE);
+  SDL_Rect sky = {0, 0, X_RESOLUTION, Y_MID};
+  SDL_RenderFillRect(renderer, &sky);
+  SDL_Rect ground = {0, 450, X_RESOLUTION, Y_MID};
+  SDL_SetRenderDrawColor(renderer, ground_color->r, ground_color->g, ground_color->b, SDL_ALPHA_OPAQUE);
+  SDL_RenderFillRect(renderer, &ground);
+}
+
 void draw(Game * g) {
-  SDL_SetRenderDrawColor(g->renderer, g->bg_color.r, g->bg_color.g, g->bg_color.b, SDL_ALPHA_OPAQUE);
   SDL_RenderClear(g->renderer);
+  draw_background(g->renderer, &g->sky_color, &g->ground_color);
   draw_objects(g->logfile, g->renderer, &g->player, g->objects, g->num_objects);
   SDL_RenderPresent(g->renderer);
 }
@@ -66,7 +72,7 @@ void move_left(Game * g) {
     for(p = 0; p < ob->num_polygons; ++p) {
       Polygon * po = &ob->polygons[p];
       for(v = 0; v < po->num_vertices; ++v)
-        po->vertices[v].x += 20;
+        po->vertices[v].x += 2;
     }
   }
 }
@@ -78,7 +84,7 @@ void move_right(Game * g) {
     for(p = 0; p < ob->num_polygons; ++p) {
       Polygon * po = &ob->polygons[p];
       for(v = 0; v < po->num_vertices; ++v)
-        po->vertices[v].x -= 20;
+        po->vertices[v].x -= 2;
     }
   }
 }
@@ -90,7 +96,7 @@ void move_forward(Game * g) {
     for(p = 0; p < ob->num_polygons; ++p) {
       Polygon * po = &ob->polygons[p];
       for(v = 0; v < po->num_vertices; ++v)
-        po->vertices[v].z -= 0.5;
+        po->vertices[v].z -= 2;
     }
   }
 }
@@ -102,7 +108,7 @@ void move_backward(Game * g) {
     for(p = 0; p < ob->num_polygons; ++p) {
       Polygon * po = &ob->polygons[p];
       for(v = 0; v < po->num_vertices; ++v)
-        po->vertices[v].z += 0.5;
+        po->vertices[v].z += 2;
     }
   }
 }
@@ -149,7 +155,6 @@ void loop(Game * g) {
   while(g->playing) {
     draw(g);
     handle_events(g);
-    SDL_Delay(25);
   }
 }
 
@@ -162,11 +167,11 @@ int main() {
 
   Polygon wall = {
     {
-      {1200, -900, 100},
-      {1200, 450, 100},
-      {1200, 450, 1},
-      {1200, -900, 1},
-      {1200, -900, 100}
+      {1600, 0, 800},
+      {1600, 1800, 800},
+      {1600, 1800, 0},
+      {1600, 0, 0},
+      {1600, 0, 800}
     },
     5,
     {250, 5, 200}
@@ -174,11 +179,11 @@ int main() {
 
   Polygon wall2 = {
     {
-      {-1200, -900, 100},
-      {-1200, 450, 100},
-      {-1200, 450, 1},
-      {-1200, -900, 1},
-      {-1200, -900, 100}
+      {-1600, 0, 800},
+      {-1600, 1800, 800},
+      {-1600, 1800, 0},
+      {-1600, 0, 0},
+      {-1600, 0, 800}
     },
     5,
     {225, 125, 50}
@@ -186,11 +191,11 @@ int main() {
 
   Polygon wall3 = {
     {
-      {-1200, -900, 100},
-      {-1200, 450, 100},
-      {1200, 450, 100},
-      {1200, -900, 100},
-      {-1200, -900, 100}
+      {-1600, 0, 800},
+      {-1600, 1800, 800},
+      {1600, 1800, 800},
+      {1600, 0, 800},
+      {-1600, 0, 800}
     },
     5,
     {100, 125, 250}
@@ -209,7 +214,8 @@ int main() {
     {walls},
     1,
     renderer,
-    {110, 220, 20},
+    {135, 206, 250},
+    {91, 84, 74},
     SDL_TRUE,
     fopen("./newgame.log", "w+")
   };
