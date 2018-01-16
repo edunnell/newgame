@@ -104,7 +104,7 @@ void move_left(Game * g) {
     for(p = 0; p < ob->num_polygons; ++p) {
       Polygon * po = &ob->polygons[p];
       for(v = 0; v < po->num_vertices; ++v)
-        po->vertices[v].x += 20;
+        po->vertices[v].x += 50;
     }
   }
 }
@@ -116,7 +116,7 @@ void move_right(Game * g) {
     for(p = 0; p < ob->num_polygons; ++p) {
       Polygon * po = &ob->polygons[p];
       for(v = 0; v < po->num_vertices; ++v)
-        po->vertices[v].x -= 20;
+        po->vertices[v].x -= 50;
     }
   }
 }
@@ -128,7 +128,7 @@ void move_forward(Game * g) {
     for(p = 0; p < ob->num_polygons; ++p) {
       Polygon * po = &ob->polygons[p];
       for(v = 0; v < po->num_vertices; ++v)
-        po->vertices[v].z -= 20;
+        po->vertices[v].z -= 50;
     }
   }
 }
@@ -140,7 +140,7 @@ void move_backward(Game * g) {
     for(p = 0; p < ob->num_polygons; ++p) {
       Polygon * po = &ob->polygons[p];
       for(v = 0; v < po->num_vertices; ++v)
-        po->vertices[v].z += 20;
+        po->vertices[v].z += 50;
     }
   }
 }
@@ -174,10 +174,10 @@ void handle_events(Game * g) {
         move_backward(g);
         break;
       case SDLK_q:
-        turn(g, 2);
+        turn(g, 1.5);
         break;
       case SDLK_e:
-        turn(g, -2);
+        turn(g, -1.5);
         break;
       }
       break;
@@ -201,11 +201,11 @@ int main() {
 
   Polygon wall = {
     {
-      {1600, 0, 3200},
-      {1600, 1800, 3200},
-      {1600, 1800, 0},
-      {1600, 0, 0},
-      {1600, 0, 3200}
+      {-7500, 5000, 7500},
+      {7500, 5000, 7500},
+      {7500, 0, 7500},
+      {-7500, 0, 7500},
+      {-7500, 5000, 7500}
     },
     5,
     {250, 5, 200}
@@ -213,11 +213,11 @@ int main() {
 
   Polygon wall2 = {
     {
-      {-1600, 0, 3200},
-      {-1600, 1800, 3200},
-      {-1600, 1800, 0},
-      {-1600, 0, 0},
-      {-1600, 0, 3200}
+      {7500, 5000, 7500},
+      {7500, 5000, 0},
+      {7500, 0, 0},
+      {7500, 0, 7500},
+      {7500, 5000, 7500}
     },
     5,
     {225, 125, 50}
@@ -225,19 +225,43 @@ int main() {
 
   Polygon wall3 = {
     {
-      {-1600, 0, 3200},
-      {-1600, 1800, 3200},
-      {1600, 1800, 3200},
-      {1600, 0, 3200},
-      {-1600, 0, 3200}
+      {-7500, 5000, 7500},
+      {-7500, 0, 7500},
+      {-7500, 0, -7500},
+      {-7500, 5000, -7500},
+      {-7500, 5000, 7500}
+    },
+    5,
+    {100, 125, 250}
+  };
+
+  Polygon wall4 = {
+    {
+      {-7500, 5000, -7500},
+      {15000, 5000, -7500},
+      {15000, 0, -7500},
+      {-7500, 0, -7500},
+      {-7500, 5000, -7500}
+    },
+    5,
+    {100, 125, 250}
+  };
+
+  Polygon wall5 = {
+    {
+      {15000, 5000, -7500},
+      {15000, 5000, 15000},
+      {15000, 0, 15000},
+      {15000, 0, -7500},
+      {15000, 5000, -7500}
     },
     5,
     {100, 125, 250}
   };
 
   Object walls = {
-    {wall, wall2, wall3},
-    3
+    {wall, wall2, wall3, wall4, wall5},
+    5
   };
 
   Game g = {
