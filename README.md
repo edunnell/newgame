@@ -1,1 +1,3 @@
-# newgame\n---\n3D rendering engine written in C using SDL2
+# newgame
+---
+3D rendering engine written in C using SDL2
