@@ -8,10 +8,10 @@ void convert_graph_to_sdl(Vertex * vertex, Vertex * vertex2) {
 }
 
 void scale(const Player * player, Vertex * vertex, Vertex * vertex2) {
-  vertex->x = vertex->x / vertex->z;
-  vertex->y = vertex->y / vertex->z;
-  vertex2->x = vertex2->x / vertex2->z;
-  vertex2->y = vertex2->y / vertex2->z;
+  vertex->x = vertex->x / (vertex->z / X_MID);
+  vertex->y = vertex->y / (vertex->z / Y_MID);
+  vertex2->x = vertex2->x / (vertex2->z / X_MID);
+  vertex2->y = vertex2->y / (vertex2->z / Y_MID);
 }
 
 void draw_line(int i, FILE * logfile, SDL_Renderer * renderer, const Player * player, const Vertex * vertex, const Vertex * vertex2, const Color * color) {
@@ -65,6 +65,38 @@ void draw(Game * g) {
   SDL_RenderPresent(g->renderer);
 }
 
+void rotate_vertex_clockwise_y(Vertex * vertex, float degrees) {
+  float angle_radians = degrees * (M_PI/180);
+  float sin_angle = sin(angle_radians);
+  float cos_angle = cos(angle_radians);
+  float tx = vertex->x;
+  float tz = vertex->z;
+
+  float txc = tx * cos_angle;
+  float tzs = tz * sin_angle;
+  float txs = tx * sin_angle;
+  float tzc = tz * cos_angle;
+
+  tx = tzs + txc;
+  tz = tzc - txs;
+
+  vertex->x = tx;
+  vertex->z = tz;
+}
+
+void turn(Game * game, float degrees) {
+  int i, j, k;
+  for(i = 0; i < game->num_objects; ++i) {
+    Object * o = &game->objects[i];
+    for(j = 0; j < o->num_polygons; ++j) {
+      Polygon * p = &o->polygons[j];
+      for(k = 0; k < p->num_vertices; ++k) {
+        rotate_vertex_clockwise_y(&p->vertices[k], degrees);
+      }
+    }
+  }
+}
+
 void move_left(Game * g) {
   int o, p, v;
   for(o = 0; o < g->num_objects; ++o) {
@@ -72,7 +104,7 @@ void move_left(Game * g) {
     for(p = 0; p < ob->num_polygons; ++p) {
       Polygon * po = &ob->polygons[p];
       for(v = 0; v < po->num_vertices; ++v)
-        po->vertices[v].x += 2;
+        po->vertices[v].x += 20;
     }
   }
 }
@@ -84,7 +116,7 @@ void move_right(Game * g) {
     for(p = 0; p < ob->num_polygons; ++p) {
       Polygon * po = &ob->polygons[p];
       for(v = 0; v < po->num_vertices; ++v)
-        po->vertices[v].x -= 2;
+        po->vertices[v].x -= 20;
     }
   }
 }
@@ -96,7 +128,7 @@ void move_forward(Game * g) {
     for(p = 0; p < ob->num_polygons; ++p) {
       Polygon * po = &ob->polygons[p];
       for(v = 0; v < po->num_vertices; ++v)
-        po->vertices[v].z -= 2;
+        po->vertices[v].z -= 20;
     }
   }
 }
@@ -108,7 +140,7 @@ void move_backward(Game * g) {
     for(p = 0; p < ob->num_polygons; ++p) {
       Polygon * po = &ob->polygons[p];
       for(v = 0; v < po->num_vertices; ++v)
-        po->vertices[v].z += 2;
+        po->vertices[v].z += 20;
     }
   }
 }
@@ -142,8 +174,10 @@ void handle_events(Game * g) {
         move_backward(g);
         break;
       case SDLK_q:
+        turn(g, 2);
         break;
       case SDLK_e:
+        turn(g, -2);
         break;
       }
       break;
@@ -167,11 +201,11 @@ int main() {
 
   Polygon wall = {
     {
-      {1600, 0, 800},
-      {1600, 1800, 800},
+      {1600, 0, 3200},
+      {1600, 1800, 3200},
       {1600, 1800, 0},
       {1600, 0, 0},
-      {1600, 0, 800}
+      {1600, 0, 3200}
     },
     5,
     {250, 5, 200}
@@ -179,11 +213,11 @@ int main() {
 
   Polygon wall2 = {
     {
-      {-1600, 0, 800},
-      {-1600, 1800, 800},
+      {-1600, 0, 3200},
+      {-1600, 1800, 3200},
       {-1600, 1800, 0},
       {-1600, 0, 0},
-      {-1600, 0, 800}
+      {-1600, 0, 3200}
     },
     5,
     {225, 125, 50}
@@ -191,11 +225,11 @@ int main() {
 
   Polygon wall3 = {
     {
-      {-1600, 0, 800},
-      {-1600, 1800, 800},
-      {1600, 1800, 800},
-      {1600, 0, 800},
-      {-1600, 0, 800}
+      {-1600, 0, 3200},
+      {-1600, 1800, 3200},
+      {1600, 1800, 3200},
+      {1600, 0, 3200},
+      {-1600, 0, 3200}
     },
     5,
     {100, 125, 250}
