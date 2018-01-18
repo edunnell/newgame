@@ -14,7 +14,7 @@ void scale(const Player * player, Vertex * vertex, Vertex * vertex2) {
   vertex2->y = vertex2->y / (vertex2->z / Y_MID);
 }
 
-void draw_line(int i, FILE * logfile, SDL_Renderer * renderer, const Player * player, const Vertex * vertex, const Vertex * vertex2, const Color * color) {
+void draw_line(FILE * logfile, SDL_Renderer * renderer, const Player * player, const Vertex * vertex, const Vertex * vertex2, const Color * color) {
   if(!(vertex->z <= 0 && vertex2->z <= 0)) {
     Vertex svertex = *vertex, svertex2 = *vertex2;
     svertex.z = svertex.z < 0.1 ? 0.1 : svertex.z;
@@ -31,7 +31,7 @@ void draw_line(int i, FILE * logfile, SDL_Renderer * renderer, const Player * pl
 void draw_polygon(FILE * logfile, SDL_Renderer * renderer, const Player * player, const Polygon * polygon) {
   int i;
   for(i = 0; i < polygon->num_vertices - 1; ++i) {
-    draw_line(i, logfile, renderer, player, &polygon->vertices[i], &polygon->vertices[i+1], &polygon->color);
+    draw_line(logfile, renderer, player, &polygon->vertices[i], &polygon->vertices[i+1], &polygon->color);
   }
 }
 
@@ -192,6 +192,21 @@ void loop(Game * g) {
   }
 }
 
+Polygon make_wall(float x, float z, float x2, float z2) {
+  Polygon wall = {
+    {
+      {x, 5000, z},
+      {x2, 5000, z2},
+      {x2, 0, z2},
+      {x, 0, z},
+      {x, 5000, z}
+    },
+    5,
+    {250, 5, 200}
+  };
+  return wall;
+}
+
 int main() {
 
   SDL_Init(SDL_INIT_VIDEO);
@@ -199,69 +214,30 @@ int main() {
   SDL_Window * window = SDL_CreateWindow("New Game", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, X_RESOLUTION, Y_RESOLUTION, SDL_WINDOW_OPENGL);
   SDL_Renderer * renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
-  Polygon wall = {
-    {
-      {-7500, 5000, 7500},
-      {7500, 5000, 7500},
-      {7500, 0, 7500},
-      {-7500, 0, 7500},
-      {-7500, 5000, 7500}
-    },
-    5,
-    {250, 5, 200}
-  };
-
-  Polygon wall2 = {
-    {
-      {7500, 5000, 7500},
-      {7500, 5000, 0},
-      {7500, 0, 0},
-      {7500, 0, 7500},
-      {7500, 5000, 7500}
-    },
-    5,
-    {225, 125, 50}
-  };
-
-  Polygon wall3 = {
-    {
-      {-7500, 5000, 7500},
-      {-7500, 0, 7500},
-      {-7500, 0, -7500},
-      {-7500, 5000, -7500},
-      {-7500, 5000, 7500}
-    },
-    5,
-    {100, 125, 250}
-  };
-
-  Polygon wall4 = {
-    {
-      {-7500, 5000, -7500},
-      {15000, 5000, -7500},
-      {15000, 0, -7500},
-      {-7500, 0, -7500},
-      {-7500, 5000, -7500}
-    },
-    5,
-    {100, 125, 250}
-  };
-
-  Polygon wall5 = {
-    {
-      {15000, 5000, -7500},
-      {15000, 5000, 15000},
-      {15000, 0, 15000},
-      {15000, 0, -7500},
-      {15000, 5000, -7500}
-    },
-    5,
-    {100, 125, 250}
-  };
+  Polygon wall = make_wall(-10000, 10000, 10000, 10000);
+  Polygon wall2 = make_wall(-10000, 10000, -10000, -10000);
+  Polygon wall3 = make_wall(-10000, -10000, 10000, -10000);
+  Polygon wall4 = make_wall(10000, -10000, 10000, -5000);
+  Polygon wall5 = make_wall(10000, 10000, 10000, 5000);
+  Polygon wall6 = make_wall(10000, 5000, 20000, 5000);
+  Polygon wall7 = make_wall(20000, 5000, 20000, 10000);
+  Polygon wall8 = make_wall(20000, 10000, 40000, 10000);
+  Polygon wall9 = make_wall(40000, 10000, 40000, -10000);
+  Polygon wall10 = make_wall(40000, -10000, 35000, -10000);
+  Polygon wall11 = make_wall(10000, -5000, 20000, -5000);
+  Polygon wall12 = make_wall(20000, -5000, 20000, -10000);
+  Polygon wall13 = make_wall(20000, -10000, 25000, -10000);
+  Polygon wall14 = make_wall(25000, -10000, 25000, -20000);
+  Polygon wall15 = make_wall(25000, -20000, 20000, -20000);
+  Polygon wall16 = make_wall(20000, -20000, 20000, -40000);
+  Polygon wall17 = make_wall(20000, -40000, 40000, -40000);
+  Polygon wall18 = make_wall(40000, -40000, 40000, -20000);
+  Polygon wall19 = make_wall(40000, -20000, 35000, -20000);
+  Polygon wall20 = make_wall(35000, -20000, 35000, -10000);
 
   Object walls = {
-    {wall, wall2, wall3, wall4, wall5},
-    5
+    {wall, wall2, wall3, wall4, wall5, wall6, wall7, wall8, wall9, wall10, wall11, wall12, wall13, wall14, wall15, wall16, wall17, wall18, wall19, wall20},
+    20
   };
 
   Game g = {
