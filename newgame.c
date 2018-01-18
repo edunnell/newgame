@@ -58,10 +58,89 @@ void draw_background(SDL_Renderer * renderer, const Color * sky_color, const Col
   SDL_RenderFillRect(renderer, &ground);
 }
 
+int scale_polygons(FILE * logfile, const Object * walls, float zs[X_RESOLUTION]) {
+  int i;
+  for(i = 0; i < walls->num_polygons; ++i) {
+    float x, x2, z, z2, y, y2;
+    int j;
+    const Polygon * c = &walls->polygons[i];
+    x = c->vertices[0].x;
+    z = c->vertices[0].z;
+    for(j = 0; j < c->num_vertices; ++j) {
+      if(c->vertices[j].x != x)
+        x2 = c->vertices[j].x;
+
+      if(c->vertices[j].z != z)
+        z2 = c->vertices[j].z;
+    }
+
+    float ox = x;
+    float ox2 = x2;
+    x = (x / (z / X_MID)) + X_MID;
+    x2 = (x2 / (z2 / X_MID)) + X_MID;
+
+    float slope = (z2 - z) / (ox2 - ox);
+    float b = z / (slope * ox);
+
+    if(x > x2) {
+      int k;
+      int bcount = x2;
+      float nz;
+      for(k = ox2; k < ox; ++k) {
+        if(bcount >= 0 && bcount < 1600) {
+          nz = slope * k + b;
+          if(zs[bcount]) {
+            if(zs[bcount] > nz) {
+              zs[bcount] = nz;
+            }
+          } else {
+            zs[bcount] = nz;
+          }
+        }
+        ++bcount;
+      }
+    } else {
+      int k;
+      int bcount = x;
+      float nz;
+      for(k = ox; k < ox2; ++k) {
+        if(bcount >= 0 && bcount < 1600) {
+          nz = slope * k + b;
+          fprintf(logfile, "bcount: %d slope: %g k: %d b: %g nz: %g\n", bcount, slope, k, b, nz);
+          if(zs[bcount] && nz) {
+            if(zs[bcount] > nz) {
+              zs[bcount] = nz;
+            }
+          } else {
+            zs[bcount] = nz;
+          }
+        }
+        ++bcount;
+      }
+    }
+  }
+}
+
+draw_walls(FILE * logfile, SDL_Renderer * renderer, const Object * walls) {
+  fprintf(logfile, "asdf\n");
+  float zs[X_RESOLUTION] = {0};
+  scale_polygons(logfile, walls, zs);
+  fprintf(logfile, "ffffffffffffffffffffffffffff\n");
+  int i;
+  for(i = 0; i < X_RESOLUTION; ++i) {
+    float y = Y_MID - ((5000 - 750) / (zs[i] / Y_MID));
+    float y2 = Y_MID - (-750 / (zs[i] / Y_MID));
+    fprintf(logfile, "z: %g\n", zs[i]);
+    SDL_SetRenderDrawColor(renderer, 250, 5, 200, SDL_ALPHA_OPAQUE);
+    SDL_RenderDrawLine(renderer, i, y, i, y2);
+  }
+}
+
 void draw(Game * g) {
   SDL_RenderClear(g->renderer);
   draw_background(g->renderer, &g->sky_color, &g->ground_color);
-  draw_objects(g->logfile, g->renderer, &g->player, g->objects, g->num_objects);
+  draw_walls(g->logfile, g->renderer, &g->walls);
+  /* draw_objects(g->logfile, g->renderer, &g->player, g->objects, g->num_objects); */
   SDL_RenderPresent(g->renderer);
 }
 
@@ -235,17 +314,16 @@ int main() {
   Polygon wall19 = make_wall(40000, -20000, 35000, -20000);
   Polygon wall20 = make_wall(35000, -20000, 35000, -10000);
 
-  Object walls = {
-    {wall, wall2, wall3, wall4, wall5, wall6, wall7, wall8, wall9, wall10, wall11, wall12, wall13, wall14, wall15, wall16, wall17, wall18, wall19, wall20},
-    20
-  };
-
   Game g = {
     {
       {0, 0, 0},
       180
     },
-    {walls},
+    {
+      {wall, wall2, wall3, wall4, wall5, wall6, wall7, wall8, wall9, wall10, wall11, wall12, wall13, wall14, wall15, wall16, wall17, wall18, wall19, wall20},
+      20
+    },
+    {},
     1,
     renderer,
     {135, 206, 250},
