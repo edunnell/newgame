@@ -15,15 +15,50 @@ void scale(const Player * player, Vertex * vertex, Vertex * vertex2) {
 }
 
 void draw_line(FILE * logfile, SDL_Renderer * renderer, const Player * player, const Vertex * vertex, const Vertex * vertex2, const Color * color) {
+  fprintf(logfile, "x %g y %g z %g x2 %g y2 %g z2 %g\n", vertex->x, vertex->y, vertex->z, vertex2->x, vertex2->y, vertex2->z);
   if(!(vertex->z <= 0 && vertex2->z <= 0)) {
     Vertex svertex = *vertex, svertex2 = *vertex2;
-    svertex.z = svertex.z < 0.1 ? 0.1 : svertex.z;
-    svertex2.z = svertex2.z < 0.1 ? 0.1 : svertex2.z;
+    if(svertex.z < 1) {
+      if(svertex.x == svertex2.x) {
+        svertex.z = 1;
+      } else if(svertex.x > svertex2.x) {
+        float slope = (svertex.z - svertex2.z) / (svertex.x - svertex2.x);
+        float b = svertex.z - (slope * svertex.x);
+        float x = -1 * (b / slope) + (1 / slope);
+        svertex.x = x;
+        svertex.z = 1;
+      } else {
+        float slope = (svertex2.z - svertex.z) / (svertex2.x - svertex.x);
+        float b = svertex2.z - (slope * svertex2.x);
+        float x = -1 * (b / slope) + (1 / slope);
+        svertex.x = x;
+        svertex.z = 1;
+      }
+    }
+    if(svertex2.z < 1) {
+      if(svertex.x == svertex2.x) {
+        svertex2.z = 1;
+      } else if(svertex.x > svertex2.x) {
+        float slope = (svertex.z - svertex2.z) / (svertex.x - svertex2.x);
+        float b = svertex.z - (slope * svertex.x);
+        float x = -1 * (b / slope) + (1 / slope);
+        svertex2.x = x;
+        svertex2.z = 1;
+      } else {
+        float slope = (svertex2.z - svertex.z) / (svertex2.x - svertex.x);
+        float b = svertex2.z - (slope * svertex2.x);
+        float x = -1 * (b / slope) + (1 / slope);
+        svertex2.x = x;
+        svertex2.z = 1;
+      }
+    }
+
     svertex.y -= 750;
     svertex2.y -= 750;
     scale(player, &svertex, &svertex2);
     convert_graph_to_sdl(&svertex, &svertex2);
     SDL_SetRenderDrawColor(renderer, color->r, color->g, color->b, SDL_ALPHA_OPAQUE);
+    fprintf(logfile, "x %g y %g x2 %g y2 %g\n", svertex.x, svertex.y, svertex2.x, svertex2.y);
     SDL_RenderDrawLine(renderer, svertex.x, svertex.y, svertex2.x, svertex2.y);
   }
 }
