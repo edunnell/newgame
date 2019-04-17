@@ -35,6 +35,7 @@ typedef struct Player {
 
 typedef struct Game {
   Player player;
+  Object walls;
   Object objects[50];
   int num_objects;
   SDL_Renderer * renderer;
